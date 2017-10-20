@@ -1122,6 +1122,30 @@ describe('$uibModal', function() {
         expect($document).toHaveModalOpenWithContent('Content from ctrl true bar', 'div');
       });
 
+      it('should allow usage of bindToController with class controller', function() {
+        var $scope = $rootScope.$new(true);
+        $scope.foo = 'bar';
+
+        var controller = class {
+          $onInit() {
+            expect(this.foo).toEqual($scope.foo);
+            this.fromCtrl = 'Content from ctrl';
+            this.closeDismissPresent = function() {
+              return angular.isFunction(this.$close) && angular.isFunction(this.$dismiss);
+            };
+          }
+        };
+
+        open({
+          template: '<div>{{test.fromCtrl}} {{test.closeDismissPresent()}} {{test.foo}}</div>',
+          controller: controller,
+          controllerAs: 'test',
+          bindToController: true,
+          scope: $scope
+        });
+        expect($document).toHaveModalOpenWithContent('Content from ctrl true bar', 'div');
+      });
+
       it('should have $onInit called', function() {
         var $scope = $rootScope.$new(true);
         var $onInit = jasmine.createSpy('$onInit');

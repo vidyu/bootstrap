@@ -756,7 +756,8 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.multiMap', 'ui.bootstrap.sta
                 };
 
                 var component = {};
-                var ctrlInstance, ctrlInstantiate, ctrlLocals = {};
+                var aClass;
+                var ctrlInstance, ctrlInstantiate, ctrlBindings, ctrlLocals = {};
 
                 if (modalOptions.component) {
                   constructLocals(component, false, true, false);
@@ -769,15 +770,31 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.multiMap', 'ui.bootstrap.sta
                   // @see https://github.com/angular/angular.js/blob/master/src/ng/controller.js#L126
                   ctrlInstantiate = $controller(modalOptions.controller, ctrlLocals, true, modalOptions.controllerAs);
                   if (modalOptions.controllerAs && modalOptions.bindToController) {
-                    ctrlInstance = ctrlInstantiate.instance;
-                    ctrlInstance.$close = modalScope.$close;
-                    ctrlInstance.$dismiss = modalScope.$dismiss;
-                    angular.extend(ctrlInstance, {
+
+                    aClass = /^(?:class\b|constructor\()/.test(Function.prototype.toString.call(modalOptions.controller) + ' ');
+                    ctrlBindings = {
                       $resolve: ctrlLocals.$scope.$resolve
-                    }, providedScope);
+                    };
+
+                    if (!aClass) {
+                      ctrlInstance = ctrlInstantiate.instance;
+                      ctrlInstance.$close = modalScope.$close;
+                      ctrlInstance.$dismiss = modalScope.$dismiss;
+                      angular.extend(ctrlInstance, ctrlBindings, providedScope);
+                    }
+
+                    ctrlInstance = ctrlInstantiate();
+
+                    if (aClass) {
+                      ctrlInstance.$close = modalScope.$close;
+                      ctrlInstance.$dismiss = modalScope.$dismiss;
+                      angular.extend(ctrlInstance, ctrlBindings, providedScope);
+                    }
+                  } else {
+                    ctrlInstance = ctrlInstantiate();
                   }
 
-                  ctrlInstance = ctrlInstantiate();
+
 
                   if (angular.isFunction(ctrlInstance.$onInit)) {
                     ctrlInstance.$onInit();
